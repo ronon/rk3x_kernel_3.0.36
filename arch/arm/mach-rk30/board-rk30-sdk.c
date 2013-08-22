@@ -152,12 +152,12 @@ static struct spi_board_info board_spi_devices[] = {
 *	rk30  backlight
 ************************************************************/
 #ifdef CONFIG_BACKLIGHT_RK29_BL
-#define PWM_ID            0
-#define PWM_MUX_NAME      GPIO0A3_PWM0_NAME
-#define PWM_MUX_MODE      GPIO0A_PWM0
-#define PWM_MUX_MODE_GPIO GPIO0A_GPIO0A3
+#define PWM_ID            2
+#define PWM_MUX_NAME      GPIO0D6_PWM2_NAME
+#define PWM_MUX_MODE      GPIO0D_PWM2
+#define PWM_MUX_MODE_GPIO GPIO0D_GPIO0D6
 #define PWM_GPIO 	  RK30_PIN0_PA3
-#define PWM_EFFECT_VALUE  1
+#define PWM_EFFECT_VALUE  0
 
 #define LCD_DISP_ON_PIN
 
@@ -574,6 +574,10 @@ static struct sensor_platform_data light_stk3171_info = {
 #define LCD_CS_PIN         RK30_PIN4_PC7
 #define LCD_CS_VALUE       GPIO_HIGH
 
+#define LCD_STB_MUX_NAME    GPIO2C6_LCDC1DATA22_SPI1RXD_HSADCDATA3_NAME
+#define LCD_STB_PIN         RK30_PIN2_PC6
+#define LCD_STB_VALUE       GPIO_HIGH
+
 #define LCD_EN_MUX_NAME    GPIO4C7_SMCDATA7_TRACEDATA7_NAME
 #define LCD_EN_PIN         RK30_PIN6_PB4
 #define LCD_EN_VALUE       GPIO_LOW
@@ -593,6 +597,21 @@ static int rk_fb_io_init(struct rk29_fb_setting_info *fb_setting)
 	{
 		gpio_direction_output(LCD_CS_PIN, LCD_CS_VALUE);
 	}
+	
+	rk30_mux_api_set(LCD_STB_MUX_NAME, GPIO2C_GPIO2C6);
+	ret = gpio_request(LCD_STB_PIN, NULL);
+	if (ret != 0)
+	{
+		gpio_free(LCD_STB_PIN);
+		printk(KERN_ERR "request lcd stb pin fail!\n");
+		return -1;
+	}
+	else
+	{
+		gpio_direction_output(LCD_STB_PIN, LCD_STB_VALUE);
+	}
+
+	
 	ret = gpio_request(LCD_EN_PIN, NULL);
 	if (ret != 0)
 	{
@@ -610,12 +629,14 @@ static int rk_fb_io_disable(void)
 {
 	gpio_set_value(LCD_CS_PIN, LCD_CS_VALUE? 0:1);
 	gpio_set_value(LCD_EN_PIN, LCD_EN_VALUE? 0:1);
+	gpio_set_value(LCD_STB_PIN, LCD_STB_VALUE? 0:1);
 	return 0;
 }
 static int rk_fb_io_enable(void)
 {
 	gpio_set_value(LCD_CS_PIN, LCD_CS_VALUE);
 	gpio_set_value(LCD_EN_PIN, LCD_EN_VALUE);
+	gpio_set_value(LCD_STB_PIN, LCD_STB_VALUE);
 	return 0;
 }
 
@@ -1438,7 +1459,7 @@ static struct i2c_board_info __initdata i2c0_info[] = {
 			.type			= "rk610_ctl",
 			.addr			= 0x40,
 			.flags			= 0,
-			.platform_data		= &rk610_power_on_init,
+			.platform_data		= &rk610_ctl_pdata,
 		},
 #ifdef CONFIG_RK610_TVOUT
 		{
